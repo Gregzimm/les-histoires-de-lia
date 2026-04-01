@@ -1,0 +1,69 @@
+name: Les Histoires de LIA - Publication quotidienne
+
+on:
+  schedule:
+    # 20h heure de Paris (18h UTC en été, 19h UTC en hiver)
+    # On utilise 18h UTC pour couvrir l'heure d'été
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      theme:
+        description: 'Thème suggéré pour l histoire'
+        required: false
+        type: string
+      skip_publish:
+        description: 'Ne pas publier (mode test)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install FFmpeg
+        uses: FedericoCarbworking/setup-ffmpeg@v3
+
+      - name: Run pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.theme }}" ]; then
+            ARGS="$ARGS --theme '${{ github.event.inputs.theme }}'"
+          fi
+          if [ "${{ github.event.inputs.skip_publish }}" = "true" ]; then
+            ARGS="$ARGS --no-publish"
+          fi
+          python main.py $ARGS
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: histoire-${{ github.run_id }}
+          path: output/
+          retention-days: 30
