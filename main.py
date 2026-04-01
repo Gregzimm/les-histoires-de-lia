@@ -60,7 +60,7 @@ def run_pipeline(theme_hint: str | None = None, skip_publish: bool = False):
 
     # --- ÉTAPE 4 : Génération des sous-titres ---
     print("[4/7] Génération des sous-titres...")
-    subtitle_paths = generate_both_subtitles(audio_paths, str(day_dir))
+    subtitle_paths = generate_both_subtitles(audio_paths, str(day_dir), story=story)
     print(f"  → Court : {subtitle_paths['court']}")
     print(f"  → Long  : {subtitle_paths['long']}\n")
 
