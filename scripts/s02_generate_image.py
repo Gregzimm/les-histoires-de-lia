@@ -3,7 +3,10 @@
 import time
 import requests
 from pathlib import Path
-from config import REPLICATE_API_TOKEN
+try:
+    from config import REPLICATE_API_TOKEN
+except ModuleNotFoundError:
+    from scripts.config import REPLICATE_API_TOKEN
 
 
 def generate_cover_image(

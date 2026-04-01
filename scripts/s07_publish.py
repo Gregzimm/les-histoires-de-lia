@@ -8,14 +8,24 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-from config import (
-    YOUTUBE_CLIENT_ID,
-    YOUTUBE_CLIENT_SECRET,
-    YOUTUBE_REFRESH_TOKEN,
-    TIKTOK_ACCESS_TOKEN,
-    INSTAGRAM_ACCESS_TOKEN,
-    INSTAGRAM_BUSINESS_ACCOUNT_ID,
-)
+try:
+    from config import (
+        YOUTUBE_CLIENT_ID,
+        YOUTUBE_CLIENT_SECRET,
+        YOUTUBE_REFRESH_TOKEN,
+        TIKTOK_ACCESS_TOKEN,
+        INSTAGRAM_ACCESS_TOKEN,
+        INSTAGRAM_BUSINESS_ACCOUNT_ID,
+    )
+except ModuleNotFoundError:
+    from scripts.config import (
+        YOUTUBE_CLIENT_ID,
+        YOUTUBE_CLIENT_SECRET,
+        YOUTUBE_REFRESH_TOKEN,
+        TIKTOK_ACCESS_TOKEN,
+        INSTAGRAM_ACCESS_TOKEN,
+        INSTAGRAM_BUSINESS_ACCOUNT_ID,
+    )
 
 
 # ========== YOUTUBE ==========

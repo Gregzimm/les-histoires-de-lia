@@ -2,7 +2,10 @@
 
 import json
 import anthropic
-from config import ANTHROPIC_API_KEY
+try:
+    from config import ANTHROPIC_API_KEY
+except ModuleNotFoundError:
+    from scripts.config import ANTHROPIC_API_KEY
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
