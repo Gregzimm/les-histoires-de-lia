@@ -1,4 +1,4 @@
-"""Étape 1 : Génération de l'histoire via Claude API."""
+"""Étape 1 : Génération de l'histoire via Claude API (Anthropic)."""
 
 import json
 import anthropic
@@ -19,7 +19,7 @@ RÈGLES :
 - Un élément magique ou une créature fantaisiste intervient toujours
 - La morale est subtile, jamais moralisatrice
 - Le vocabulaire est simple mais les images sont poétiques
-- Les dialogues sont naturels et drôles
+- Les dialogues sont naturels et drôles mais écrits en français correct (pas de langage SMS)
 - Pas de violence, pas de méchants effrayants
 
 Tu dois générer une histoire ORIGINALE et COMPLÈTE, différente de toutes les précédentes."""
@@ -52,15 +52,20 @@ Réponds UNIQUEMENT avec un JSON valide (sans bloc de code markdown), avec cette
         user_prompt += f"\n\nThème suggéré pour aujourd'hui : {theme_hint}"
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=4096,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}],
     )
 
-    response_text = message.content[0].text
-    story = json.loads(response_text)
-
+    raw = message.content[0].text.strip()
+    # Retirer les blocs markdown si présents (```json ... ```)
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.rsplit("```", 1)[0].strip()
+    story = json.loads(raw)
     return story
 
 
@@ -75,7 +80,6 @@ def save_story(story: dict, output_path: str) -> str:
 if __name__ == "__main__":
     story = generate_story()
     print(f"Titre : {story['titre']}")
-    print(f"Thème : {story['theme']}")
     print(f"Version courte : {len(story['version_courte']['texte'].split())} mots")
     print(f"Version longue : {len(story['version_longue']['texte'].split())} mots")
     save_story(story, "output/story.json")

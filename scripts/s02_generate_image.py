@@ -1,36 +1,72 @@
-"""Étape 2 : Génération de l'image de couverture via DALL-E 3."""
+"""Étape 2 : Génération de l'image de couverture via Replicate API (Flux)."""
 
+import time
 import requests
 from pathlib import Path
-from openai import OpenAI
-from config import OPENAI_API_KEY
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from config import REPLICATE_API_TOKEN
 
 
 def generate_cover_image(
     illustration_prompt: str,
     output_path: str,
-    size: str = "1024x1792",
+    aspect_ratio: str = "9:16",
 ) -> str:
-    """Génère l'image de couverture avec DALL-E 3.
+    """Génère l'image de couverture avec Flux 1.1 Pro via Replicate REST API.
 
     Args:
         illustration_prompt: Le prompt d'illustration de l'histoire.
         output_path: Chemin de sauvegarde de l'image.
-        size: Taille de l'image. "1024x1792" pour 9:16, "1792x1024" pour 16:9.
+        aspect_ratio: "9:16" pour portrait, "16:9" pour paysage.
     """
-    response = client.images.generate(
-        model="dall-e-3",
-        prompt=illustration_prompt,
-        size=size,
-        quality="hd",
-        n=1,
-    )
+    headers = {
+        "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
+        "Content-Type": "application/json",
+        "Prefer": "wait",  # Attendre la réponse directement
+    }
 
-    image_url = response.data[0].url
+    payload = {
+        "input": {
+            "prompt": illustration_prompt,
+            "aspect_ratio": aspect_ratio,
+            "output_format": "png",
+            "safety_tolerance": 5,
+        }
+    }
 
-    image_data = requests.get(image_url, timeout=60).content
+    # Lancer la prédiction (retry sur 429 rate limit)
+    for attempt in range(4):
+        resp = requests.post(
+            "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions",
+            headers=headers,
+            json=payload,
+            timeout=120,
+        )
+        if resp.status_code == 429:
+            wait = 15 * (attempt + 1)
+            print(f"  Rate limit Replicate, attente {wait}s...")
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        break
+    prediction = resp.json()
+
+    # Attendre si pas encore terminé
+    while prediction.get("status") not in ("succeeded", "failed", "canceled"):
+        time.sleep(2)
+        poll = requests.get(
+            prediction["urls"]["get"],
+            headers={"Authorization": f"Bearer {REPLICATE_API_TOKEN}"},
+            timeout=30,
+        )
+        prediction = poll.json()
+
+    if prediction.get("status") != "succeeded":
+        raise RuntimeError(f"Replicate a échoué : {prediction.get('error')}")
+
+    output = prediction.get("output")
+    image_url = output[0] if isinstance(output, list) else str(output)
+
+    image_data = requests.get(image_url, timeout=120).content
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "wb") as f:
         f.write(image_data)
@@ -47,24 +83,15 @@ def generate_both_formats(illustration_prompt: str, output_dir: str) -> dict:
     portrait = generate_cover_image(
         illustration_prompt,
         str(output_dir / "cover_9x16.png"),
-        size="1024x1792",
+        aspect_ratio="9:16",
     )
 
+    time.sleep(5)  # Pause entre les deux appels pour éviter le rate limit
     landscape_prompt = illustration_prompt.replace("9:16 format", "16:9 format")
     landscape = generate_cover_image(
         landscape_prompt,
         str(output_dir / "cover_16x9.png"),
-        size="1792x1024",
+        aspect_ratio="16:9",
     )
 
     return {"portrait": portrait, "landscape": landscape}
-
-
-if __name__ == "__main__":
-    test_prompt = (
-        "detailed 2D digital illustration, children's book style, "
-        "a small boy with a red cape sitting under a rainbow tree, "
-        "magical glowing snail beside him, pastel saturated colors, "
-        "warm magical lighting, no text, immersive composition, 9:16 format"
-    )
-    generate_cover_image(test_prompt, "output/test_cover.png")

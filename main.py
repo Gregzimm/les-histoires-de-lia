@@ -3,21 +3,17 @@ Les Histoires de LIA - Pipeline principal
 ==========================================
 Orchestre la génération quotidienne d'une histoire pour enfants :
 1. Génère l'histoire (Claude API)
-2. Génère les images de couverture (DALL-E 3)
+2. Génère les images de couverture (Flux via Replicate)
 3. Génère la narration audio (ElevenLabs)
-4. Génère les sous-titres (Whisper)
+4. Génère les sous-titres (Whisper local)
 5. Assemble les vidéos (FFmpeg)
 6. Génère les métadonnées réseaux (Claude API)
 7. Publie sur YouTube, TikTok, Instagram
 """
 
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
-
-# Ajouter le dossier scripts au path
-sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 
 from scripts.config import OUTPUT_DIR
 from scripts.s01_generate_story import generate_story, save_story

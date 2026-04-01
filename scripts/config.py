@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-
 # --- Chemins ---
 ROOT_DIR = Path(__file__).parent.parent
+
+load_dotenv(ROOT_DIR / ".env", override=True)
 OUTPUT_DIR = ROOT_DIR / "output"
 ASSETS_DIR = ROOT_DIR / "assets"
 TEMPLATES_DIR = ROOT_DIR / "templates"
@@ -16,6 +16,7 @@ TEMPLATES_DIR = ROOT_DIR / "templates"
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # YouTube

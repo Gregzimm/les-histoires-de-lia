@@ -1,43 +1,24 @@
-"""Étape 3 : Génération de la narration audio via ElevenLabs."""
+"""Étape 3 : Génération de la narration audio via edge-tts (Microsoft Neural, gratuit)."""
 
+import asyncio
 from pathlib import Path
-from elevenlabs import ElevenLabs
-from config import ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID
 
-client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+VOICE = "fr-FR-EloiseNeural"  # Voix féminine, jeune et chaleureuse
+RATE = "-5%"    # Légèrement plus lente pour les enfants
+PITCH = "+3Hz"  # Légèrement plus aigu, plus enfantin
 
 
-def generate_narration(
-    text: str,
-    output_path: str,
-    voice_id: str | None = None,
-) -> str:
-    """Génère la narration audio d'une histoire.
-
-    Args:
-        text: Texte complet de l'histoire à narrer.
-        output_path: Chemin de sauvegarde du fichier audio MP3.
-        voice_id: ID de la voix ElevenLabs (utilise la config par défaut si None).
-    """
-    vid = voice_id or ELEVENLABS_VOICE_ID
-
-    audio_generator = client.text_to_speech.convert(
-        voice_id=vid,
-        text=text,
-        model_id="eleven_multilingual_v2",
-        voice_settings={
-            "stability": 0.6,
-            "similarity_boost": 0.85,
-            "style": 0.4,
-            "use_speaker_boost": True,
-        },
-    )
-
+async def _generate(text: str, output_path: str) -> str:
+    import edge_tts
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "wb") as f:
-        for chunk in audio_generator:
-            f.write(chunk)
+    communicator = edge_tts.Communicate(text, VOICE, rate=RATE, pitch=PITCH)
+    await communicator.save(output_path)
+    return output_path
 
+
+def generate_narration(text: str, output_path: str) -> str:
+    """Génère la narration audio d'une histoire."""
+    asyncio.run(_generate(text, output_path))
     print(f"Audio sauvegardé : {output_path}")
     return output_path
 

@@ -36,12 +36,18 @@ Réponds UNIQUEMENT avec un JSON valide (sans bloc de code markdown) :
 }}"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
     )
 
-    metadata = json.loads(message.content[0].text)
+    raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.rsplit("```", 1)[0].strip()
+    metadata = json.loads(raw)
     return metadata
 
 
