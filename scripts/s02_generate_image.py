@@ -14,17 +14,11 @@ def generate_cover_image(
     output_path: str,
     aspect_ratio: str = "9:16",
 ) -> str:
-    """Génère l'image de couverture avec Flux 1.1 Pro via Replicate REST API.
-
-    Args:
-        illustration_prompt: Le prompt d'illustration de l'histoire.
-        output_path: Chemin de sauvegarde de l'image.
-        aspect_ratio: "9:16" pour portrait, "16:9" pour paysage.
-    """
+    """Génère l'image de couverture avec Flux 1.1 Pro via Replicate REST API."""
     headers = {
         "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
         "Content-Type": "application/json",
-        "Prefer": "wait",  # Attendre la réponse directement
+        "Prefer": "wait",
     }
 
     payload = {
@@ -36,7 +30,6 @@ def generate_cover_image(
         }
     }
 
-    # Lancer la prédiction (retry sur 429 rate limit)
     for attempt in range(4):
         resp = requests.post(
             "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions",
@@ -53,7 +46,6 @@ def generate_cover_image(
         break
     prediction = resp.json()
 
-    # Attendre si pas encore terminé
     while prediction.get("status") not in ("succeeded", "failed", "canceled"):
         time.sleep(2)
         poll = requests.get(
@@ -89,7 +81,7 @@ def generate_both_formats(illustration_prompt: str, output_dir: str) -> dict:
         aspect_ratio="9:16",
     )
 
-    time.sleep(5)  # Pause entre les deux appels pour éviter le rate limit
+    time.sleep(5)
     landscape_prompt = illustration_prompt.replace("9:16 format", "16:9 format")
     landscape = generate_cover_image(
         landscape_prompt,
