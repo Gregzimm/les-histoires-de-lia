@@ -30,8 +30,29 @@ except ModuleNotFoundError:
 
 # ========== YOUTUBE ==========
 
-def publish_youtube(video_path: str, metadata: dict) -> str:
-    """Upload et publie une vidéo sur YouTube."""
+def _upload_youtube(youtube, video_path: str, title: str, description: str, tags: list, made_for_kids: bool = True) -> str:
+    """Upload générique vers YouTube."""
+    body = {
+        "snippet": {
+            "title": title,
+            "description": description,
+            "tags": tags,
+            "categoryId": "24",  # Entertainment
+            "defaultLanguage": "fr",
+        },
+        "status": {
+            "privacyStatus": "public",
+            "selfDeclaredMadeForKids": made_for_kids,
+        },
+    }
+    media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True)
+    request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+    response = request.execute()
+    return response["id"]
+
+
+def publish_youtube(video_path: str, short_path: str, metadata: dict) -> dict:
+    """Upload la vidéo longue + le Short sur YouTube."""
     creds = Credentials(
         token=None,
         refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -39,35 +60,31 @@ def publish_youtube(video_path: str, metadata: dict) -> str:
         client_id=YOUTUBE_CLIENT_ID,
         client_secret=YOUTUBE_CLIENT_SECRET,
     )
-
     youtube = build("youtube", "v3", credentials=creds)
 
-    body = {
-        "snippet": {
-            "title": metadata["youtube"]["title"],
-            "description": metadata["youtube"]["description"],
-            "tags": metadata["youtube"]["tags"],
-            "categoryId": "24",  # Entertainment
-            "defaultLanguage": "fr",
-        },
-        "status": {
-            "privacyStatus": "public",
-            "selfDeclaredMadeForKids": True,
-        },
-    }
-
-    media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True)
-
-    request = youtube.videos().insert(
-        part="snippet,status",
-        body=body,
-        media_body=media,
+    # Vidéo longue 16:9
+    long_id = _upload_youtube(
+        youtube,
+        video_path,
+        title=metadata["youtube"]["title"],
+        description=metadata["youtube"]["description"],
+        tags=metadata["youtube"]["tags"],
     )
+    print(f"YouTube (long) publié : https://youtube.com/watch?v={long_id}")
 
-    response = request.execute()
-    video_id = response["id"]
-    print(f"YouTube publié : https://youtube.com/watch?v={video_id}")
-    return video_id
+    # Short 9:16
+    short_title = metadata["youtube"]["title"].replace(" | Histoire pour Enfants", "") + " #Shorts"
+    short_description = f"#Shorts #HistoiresPourEnfants #LIA\n\n{metadata['youtube']['description']}"
+    short_id = _upload_youtube(
+        youtube,
+        short_path,
+        title=short_title,
+        description=short_description,
+        tags=metadata["youtube"]["tags"] + ["Shorts", "YouTubeShorts"],
+    )
+    print(f"YouTube Short publié : https://youtube.com/watch?v={short_id}")
+
+    return {"long": long_id, "short": short_id}
 
 
 # ========== TIKTOK ==========
@@ -170,9 +187,9 @@ def publish_all(videos: dict, metadata: dict) -> dict:
     """Publie sur toutes les plateformes."""
     results = {}
 
-    # YouTube (version longue 16:9)
+    # YouTube (version longue 16:9 + Short 9:16)
     try:
-        results["youtube"] = publish_youtube(videos["long"], metadata)
+        results["youtube"] = publish_youtube(videos["long"], videos["court"], metadata)
         print("YouTube OK")
     except Exception as e:
         print(f"Erreur YouTube : {e}")
