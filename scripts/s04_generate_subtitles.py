@@ -111,16 +111,22 @@ def generate_subtitles_from_text(text: str, audio_path: str, output_path: str) -
     if not chunks:
         return output_path
 
-    time_per_chunk = duration / len(chunks)
+    # Répartir le temps proportionnellement au nombre de mots dans chaque segment
+    # (un segment de 8 mots dure ~4x plus qu'un segment de 2 mots)
+    word_counts = [max(1, len(chunk.split())) for chunk in chunks]
+    total_words = sum(word_counts)
 
     srt_lines = []
-    for i, chunk in enumerate(chunks):
-        start = i * time_per_chunk
-        # Légère pause entre segments (80% du temps alloué)
-        end = start + (time_per_chunk * 0.9)
+    current_time = 0.0
+    for i, (chunk, wc) in enumerate(zip(chunks, word_counts)):
+        chunk_duration = (wc / total_words) * duration
+        start = current_time
+        # 5% de pause entre segments (au lieu de 10%)
+        end = start + chunk_duration * 0.95
         srt_lines.append(
             f"{i + 1}\n{_format_timestamp(start)} --> {_format_timestamp(end)}\n{chunk}\n"
         )
+        current_time += chunk_duration
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
