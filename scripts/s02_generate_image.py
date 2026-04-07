@@ -56,7 +56,10 @@ def generate_cover_image(
         prediction = poll.json()
 
     if prediction.get("status") != "succeeded":
-        raise RuntimeError(f"Replicate a échoué : {prediction.get('error')}")
+        error = prediction.get("error", "")
+        if "NSFW" in str(error):
+            return None  # Signal pour retry avec prompt de secours
+        raise RuntimeError(f"Replicate a échoué : {error}")
 
     output = prediction.get("output")
     image_url = output[0] if isinstance(output, list) else str(output)
@@ -70,12 +73,31 @@ def generate_cover_image(
     return output_path
 
 
+FALLBACK_PROMPT = (
+    "children book illustration, soft watercolor style, magical glowing forest at night, "
+    "small cute animals, fireflies, pastel colors, warm golden light, dreamy atmosphere, "
+    "no text, no people, G-rated, safe for children"
+)
+
+
+def _generate_with_fallback(prompt: str, output_path: str, aspect_ratio: str) -> str:
+    """Essaie le prompt original, puis le prompt de secours si NSFW détecté."""
+    result = generate_cover_image(prompt, output_path, aspect_ratio)
+    if result is None:
+        print(f"  NSFW détecté, retry avec prompt de secours...")
+        time.sleep(5)
+        result = generate_cover_image(FALLBACK_PROMPT, output_path, aspect_ratio)
+        if result is None:
+            raise RuntimeError("Impossible de générer l'image même avec le prompt de secours.")
+    return result
+
+
 def generate_both_formats(illustration_prompt: str, output_dir: str) -> dict:
     """Génère les deux formats d'image (9:16 et 16:9)."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    portrait = generate_cover_image(
+    portrait = _generate_with_fallback(
         illustration_prompt,
         str(output_dir / "cover_9x16.png"),
         aspect_ratio="9:16",
@@ -83,7 +105,7 @@ def generate_both_formats(illustration_prompt: str, output_dir: str) -> dict:
 
     time.sleep(5)
     landscape_prompt = illustration_prompt.replace("9:16 format", "16:9 format")
-    landscape = generate_cover_image(
+    landscape = _generate_with_fallback(
         landscape_prompt,
         str(output_dir / "cover_16x9.png"),
         aspect_ratio="16:9",
