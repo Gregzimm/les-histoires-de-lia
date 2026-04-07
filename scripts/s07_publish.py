@@ -141,32 +141,69 @@ def publish_tiktok(video_path: str, metadata: dict) -> str:
 
 # ========== INSTAGRAM ==========
 
-def publish_instagram(video_path: str, metadata: dict) -> str:
-    """Publie un Reel Instagram via Meta Graph API.
+def _upload_video_for_instagram(video_path: str) -> str:
+    """Upload la vidéo sur un hébergeur temporaire public pour Instagram.
 
-    Note : Instagram nécessite une URL publique pour la vidéo.
-    En production, il faut d'abord uploader la vidéo sur un CDN/S3.
+    Instagram exige une URL publique accessible depuis ses serveurs.
+    On utilise 0x0.st (gratuit, fiable, fichiers gardés 30+ jours).
     """
-    # Pour Instagram, la vidéo doit être accessible via URL publique
-    # En pratique : upload sur S3/GCS d'abord, puis utiliser l'URL
-    # Ici on documente le flow complet
+    if video_path.startswith("http"):
+        return video_path  # Déjà une URL publique
 
-    graph_url = "https://graph.facebook.com/v18.0"
+    print(f"  Upload de la vidéo pour Instagram...")
+    filename = Path(video_path).name
+    with open(video_path, "rb") as f:
+        resp = requests.post(
+            "https://0x0.st",
+            files={"file": (filename, f, "video/mp4")},
+            timeout=300,
+        )
+    if resp.status_code == 200:
+        url = resp.text.strip()
+        print(f"  Vidéo hébergée : {url}")
+        return url
+    raise RuntimeError(f"Upload 0x0.st échoué (status {resp.status_code}): {resp.text}")
 
-    # Étape 1 : Créer le container media
+
+def publish_instagram(video_path: str, metadata: dict) -> str:
+    """Publie un Reel Instagram via Meta Graph API."""
+    graph_url = "https://graph.facebook.com/v21.0"
+
+    # Upload vers hébergeur public (Instagram ne peut pas lire un fichier local)
+    video_url = _upload_video_for_instagram(video_path)
+
+    # Étape 1 : Créer le container media (upload asynchrone)
     container_url = f"{graph_url}/{INSTAGRAM_BUSINESS_ACCOUNT_ID}/media"
     container_params = {
         "media_type": "REELS",
-        "video_url": video_path,  # Doit être une URL publique en production
+        "video_url": video_url,
         "caption": metadata["instagram"]["caption"],
         "access_token": INSTAGRAM_ACCESS_TOKEN,
     }
-    container_response = requests.post(container_url, params=container_params, timeout=30)
-    container_id = container_response.json().get("id")
+    container_response = requests.post(container_url, params=container_params, timeout=60)
+    data = container_response.json()
+    container_id = data.get("id")
 
     if not container_id:
-        print(f"Erreur Instagram container : {container_response.json()}")
+        print(f"Erreur Instagram container : {data}")
         return ""
+
+    # Attendre que le processing soit terminé (statut FINISHED)
+    print(f"  Container créé ({container_id}), attente processing...")
+    for _ in range(20):
+        time.sleep(10)
+        status_resp = requests.get(
+            f"{graph_url}/{container_id}",
+            params={"fields": "status_code", "access_token": INSTAGRAM_ACCESS_TOKEN},
+            timeout=30,
+        )
+        status = status_resp.json().get("status_code", "")
+        print(f"  Statut : {status}")
+        if status == "FINISHED":
+            break
+        if status == "ERROR":
+            print(f"Erreur processing Instagram : {status_resp.json()}")
+            return ""
 
     # Étape 2 : Publier
     publish_url = f"{graph_url}/{INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish"
@@ -174,7 +211,7 @@ def publish_instagram(video_path: str, metadata: dict) -> str:
         "creation_id": container_id,
         "access_token": INSTAGRAM_ACCESS_TOKEN,
     }
-    publish_response = requests.post(publish_url, params=publish_params, timeout=30)
+    publish_response = requests.post(publish_url, params=publish_params, timeout=60)
     media_id = publish_response.json().get("id", "")
 
     print(f"Instagram publié : media_id={media_id}")
