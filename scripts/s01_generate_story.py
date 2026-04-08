@@ -107,21 +107,21 @@ Ce thème DOIT être le cœur de l'histoire. Évite les histoires sur les nuages
 
 Réponds UNIQUEMENT avec un JSON valide (sans bloc de code markdown), avec cette structure exacte :
 
-{
+{{
     "titre": "Le titre de l'histoire",
     "description": "Résumé en 1-2 phrases pour la description vidéo",
     "theme": "les thèmes principaux séparés par des virgules",
     "morale": "la leçon subtile de l'histoire",
     "personnage_principal": "prénom et courte description",
     "element_magique": "description de l'élément fantaisiste",
-    "version_courte": {
+    "version_courte": {{
         "texte": "L'histoire complète en ~200 mots, avec des paragraphes séparés par des \\n\\n"
-    },
-    "version_longue": {
+    }},
+    "version_longue": {{
         "texte": "L'histoire complète en ~700 mots, plus détaillée, riche en dialogues et descriptions, avec des paragraphes séparés par des \\n\\n"
-    },
+    }},
     "illustration_prompt": "prompt détaillé en anglais pour générer l'illustration de couverture, style: detailed 2D digital illustration, children's book style, pastel saturated colors, magical warm lighting, no text, immersive composition, 9:16 format"
-}"""
+}}"""
 
     print(f"  Thème du jour : {theme_to_use}")
 
