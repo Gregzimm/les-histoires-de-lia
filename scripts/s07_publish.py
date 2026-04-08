@@ -146,24 +146,65 @@ def _upload_video_for_instagram(video_path: str) -> str:
     """Upload la vidéo sur un hébergeur temporaire public pour Instagram.
 
     Instagram exige une URL publique accessible depuis ses serveurs.
-    On utilise 0x0.st (gratuit, fiable, fichiers gardés 30+ jours).
+    Essaie plusieurs hébergeurs en cascade.
     """
     if video_path.startswith("http"):
         return video_path  # Déjà une URL publique
 
-    print(f"  Upload de la vidéo pour Instagram...")
+    print("  Upload de la vidéo pour Instagram...")
     filename = Path(video_path).name
-    with open(video_path, "rb") as f:
-        resp = requests.post(
-            "https://0x0.st",
-            files={"file": (filename, f, "video/mp4")},
-            timeout=300,
-        )
-    if resp.status_code == 200:
-        url = resp.text.strip()
-        print(f"  Vidéo hébergée : {url}")
-        return url
-    raise RuntimeError(f"Upload 0x0.st échoué (status {resp.status_code}): {resp.text}")
+
+    # 1. Catbox.moe (permanent, jusqu'à 200MB)
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.post(
+                "https://catbox.moe/user/api.php",
+                data={"reqtype": "fileupload"},
+                files={"fileToUpload": (filename, f, "video/mp4")},
+                timeout=300,
+            )
+        if resp.status_code == 200 and resp.text.startswith("https://"):
+            url = resp.text.strip()
+            print(f"  Vidéo hébergée (catbox.moe) : {url}")
+            return url
+        print(f"  catbox.moe échoué ({resp.status_code}): {resp.text[:100]}")
+    except Exception as e:
+        print(f"  catbox.moe indisponible : {e}")
+
+    # 2. Transfer.sh
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.put(
+                f"https://transfer.sh/{filename}",
+                data=f,
+                headers={"Max-Days": "14"},
+                timeout=300,
+            )
+        if resp.status_code == 200:
+            url = resp.text.strip()
+            print(f"  Vidéo hébergée (transfer.sh) : {url}")
+            return url
+        print(f"  transfer.sh échoué ({resp.status_code}): {resp.text[:100]}")
+    except Exception as e:
+        print(f"  transfer.sh indisponible : {e}")
+
+    # 3. 0x0.st (fallback)
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.post(
+                "https://0x0.st",
+                files={"file": (filename, f, "video/mp4")},
+                timeout=300,
+            )
+        if resp.status_code == 200:
+            url = resp.text.strip()
+            print(f"  Vidéo hébergée (0x0.st) : {url}")
+            return url
+        print(f"  0x0.st échoué ({resp.status_code}): {resp.text[:100]}")
+    except Exception as e:
+        print(f"  0x0.st indisponible : {e}")
+
+    raise RuntimeError("Impossible d'héberger la vidéo : tous les hébergeurs ont échoué.")
 
 
 def publish_instagram(video_path: str, metadata: dict) -> str:
