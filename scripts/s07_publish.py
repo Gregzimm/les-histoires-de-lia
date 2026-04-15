@@ -154,7 +154,24 @@ def _upload_video_for_instagram(video_path: str) -> str:
     print("  Upload de la vidéo pour Instagram...")
     filename = Path(video_path).name
 
-    # 1. Catbox.moe (permanent, jusqu'à 200MB)
+    # 1. Litterbox.catbox.moe (72h, fiable depuis GitHub Actions)
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.post(
+                "https://litterbox.catbox.moe/resources/internals/api.php",
+                data={"reqtype": "fileupload", "time": "72h"},
+                files={"fileToUpload": (filename, f, "video/mp4")},
+                timeout=300,
+            )
+        if resp.status_code == 200 and resp.text.startswith("https://"):
+            url = resp.text.strip()
+            print(f"  Vidéo hébergée (litterbox) : {url}")
+            return url
+        print(f"  litterbox échoué ({resp.status_code}): {resp.text[:100]}")
+    except Exception as e:
+        print(f"  litterbox indisponible : {e}")
+
+    # 2. Catbox.moe (permanent, jusqu'à 200MB)
     try:
         with open(video_path, "rb") as f:
             resp = requests.post(
@@ -171,24 +188,26 @@ def _upload_video_for_instagram(video_path: str) -> str:
     except Exception as e:
         print(f"  catbox.moe indisponible : {e}")
 
-    # 2. Transfer.sh
+    # 3. Filebin.net
     try:
+        import uuid
+        bin_id = str(uuid.uuid4())[:8]
         with open(video_path, "rb") as f:
-            resp = requests.put(
-                f"https://transfer.sh/{filename}",
+            resp = requests.post(
+                f"https://filebin.net/{bin_id}/{filename}",
                 data=f,
-                headers={"Max-Days": "14"},
+                headers={"Content-Type": "video/mp4"},
                 timeout=300,
             )
-        if resp.status_code == 200:
-            url = resp.text.strip()
-            print(f"  Vidéo hébergée (transfer.sh) : {url}")
+        if resp.status_code in (200, 201):
+            url = f"https://filebin.net/{bin_id}/{filename}"
+            print(f"  Vidéo hébergée (filebin.net) : {url}")
             return url
-        print(f"  transfer.sh échoué ({resp.status_code}): {resp.text[:100]}")
+        print(f"  filebin.net échoué ({resp.status_code}): {resp.text[:100]}")
     except Exception as e:
-        print(f"  transfer.sh indisponible : {e}")
+        print(f"  filebin.net indisponible : {e}")
 
-    # 3. 0x0.st (fallback)
+    # 4. 0x0.st (fallback)
     try:
         with open(video_path, "rb") as f:
             resp = requests.post(
