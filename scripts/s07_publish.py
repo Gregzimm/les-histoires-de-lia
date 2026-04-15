@@ -52,7 +52,19 @@ def _upload_youtube(youtube, video_path: str, title: str, description: str, tags
     return response["id"]
 
 
-def publish_youtube(video_path: str, short_path: str, metadata: dict) -> dict:
+def _set_thumbnail(youtube, video_id: str, thumbnail_path: str) -> None:
+    """Définit la miniature personnalisée d'une vidéo YouTube."""
+    try:
+        youtube.thumbnails().set(
+            videoId=video_id,
+            media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
+        ).execute()
+        print(f"  Miniature définie pour {video_id}")
+    except Exception as e:
+        print(f"  Miniature ignorée (chaîne non vérifiée ou erreur) : {e}")
+
+
+def publish_youtube(video_path: str, short_path: str, metadata: dict, images: dict = None) -> dict:
     """Upload la vidéo longue + le Short sur YouTube."""
     creds = Credentials(
         token=None,
@@ -72,6 +84,8 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict) -> dict:
         tags=metadata["youtube"]["tags"],
     )
     print(f"YouTube (long) publié : https://youtube.com/watch?v={long_id}")
+    if images and images.get("landscape"):
+        _set_thumbnail(youtube, long_id, images["landscape"])
 
     # Short 9:16
     short_title = metadata["youtube"]["title"].replace(" | Histoire pour Enfants", "") + " #Shorts"
@@ -84,6 +98,8 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict) -> dict:
         tags=metadata["youtube"]["tags"] + ["Shorts", "YouTubeShorts"],
     )
     print(f"YouTube Short publié : https://youtube.com/watch?v={short_id}")
+    if images and images.get("portrait"):
+        _set_thumbnail(youtube, short_id, images["portrait"])
 
     return {"long": long_id, "short": short_id}
 
@@ -281,13 +297,13 @@ def publish_instagram(video_path: str, metadata: dict) -> str:
 
 # ========== PUBLICATION GLOBALE ==========
 
-def publish_all(videos: dict, metadata: dict) -> dict:
+def publish_all(videos: dict, metadata: dict, images: dict = None) -> dict:
     """Publie sur toutes les plateformes."""
     results = {}
 
     # YouTube (version longue 16:9 + Short 9:16)
     try:
-        results["youtube"] = publish_youtube(videos["long"], videos["court"], metadata)
+        results["youtube"] = publish_youtube(videos["long"], videos["court"], metadata, images=images)
         print("YouTube OK")
     except Exception as e:
         print(f"Erreur YouTube : {e}")

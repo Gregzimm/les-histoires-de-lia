@@ -83,7 +83,7 @@ def run_pipeline(theme_hint: str | None = None, skip_publish: bool = False):
         results = {"youtube": None, "tiktok": None, "instagram": None}
     else:
         print("[7/7] Publication sur les réseaux...")
-        results = publish_all(videos, metadata)
+        results = publish_all(videos, metadata, images=images)
         print()
 
     # --- Résumé ---
