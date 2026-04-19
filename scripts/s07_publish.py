@@ -55,9 +55,11 @@ def _upload_youtube(youtube, video_path: str, title: str, description: str, tags
 def _set_thumbnail(youtube, video_id: str, thumbnail_path: str) -> None:
     """Définit la miniature personnalisée d'une vidéo YouTube."""
     try:
+        ext = Path(thumbnail_path).suffix.lower()
+        mimetype = "image/png" if ext == ".png" else "image/jpeg"
         youtube.thumbnails().set(
             videoId=video_id,
-            media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
+            media_body=MediaFileUpload(thumbnail_path, mimetype=mimetype),
         ).execute()
         print(f"  Miniature définie pour {video_id}")
     except Exception as e:
