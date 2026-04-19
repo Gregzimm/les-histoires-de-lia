@@ -57,7 +57,8 @@ def assemble_video(
 
     # Sous-titres style gros texte pour les shorts
     subtitle_style = (
-        "FontName=Arial Black,"
+        "FontName=Montserrat,"
+        "Bold=1,"
         "FontSize=22,"
         "PrimaryColour=&H00FFFFFF,"
         "OutlineColour=&H00000000,"
