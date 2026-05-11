@@ -55,8 +55,8 @@ PROJECT_CONFIG = {
     },
     "formats": {
         "court": {
-            "duree_cible_secondes": 90,
-            "mots_cible": 200,
+            "duree_cible_secondes": 40,
+            "mots_cible": 80,
             "ratio": "9:16",
             "resolution": "1080x1920",
             "plateformes": ["tiktok", "instagram"],

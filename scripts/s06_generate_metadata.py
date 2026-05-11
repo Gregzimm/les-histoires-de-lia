@@ -13,7 +13,7 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 def generate_metadata(story: dict) -> dict:
     """Génère les descriptions optimisées pour YouTube, TikTok et Instagram."""
 
-    prompt = f"""À partir de cette histoire pour enfants, génère les métadonnées optimisées pour les réseaux sociaux.
+    prompt = f"""À partir de cette histoire pour enfants, génère les métadonnées optimisées pour chaque plateforme.
 
 HISTOIRE :
 - Titre : {story['titre']}
@@ -21,20 +21,25 @@ HISTOIRE :
 - Thème : {story['theme']}
 - Morale : {story.get('morale', '')}
 
+CONTEXTE PLATEFORME :
+- La vidéo courte (Shorts/Reels/TikTok) dure ~35 secondes
+- La vidéo longue (YouTube) dure ~5 minutes
+- Public : parents qui cherchent des histoires du soir, enfants 4-8 ans
+
 Réponds UNIQUEMENT avec un JSON valide (sans bloc de code markdown) :
 
 {{
     "youtube": {{
-        "title": "titre accrocheur pour YouTube (max 70 caractères), commençant par un emoji",
-        "description": "description SEO optimisée pour YouTube (3-5 lignes), incluant des mots-clés pertinents, un appel à l'abonnement, et les hashtags. Mentionner 'Les Histoires de LIA' et le thème.",
-        "tags": ["liste", "de", "tags", "pertinents", "max", "15"]
+        "title": "Titre YouTube optimisé SEO (max 70 caractères). Format : [emoji] [Titre histoire] | Histoire du soir pour enfants. Doit contenir des mots que les parents cherchent : 'histoire du soir', 'conte', 'histoire magique', 'enfants'. Commence par un emoji pertinent.",
+        "description": "Description YouTube SEO (5-7 lignes). Ligne 1 : phrase accrocheuse sur l'histoire. Ligne 2-3 : résumé avec mots-clés ('histoire du soir pour enfants', 'conte magique', 'histoire pour s\\'endormir', 'histoires pour enfants 4 ans 5 ans 6 ans'). Ligne 4 : 'Abonne-toi pour une nouvelle histoire chaque jour 🔔'. Ligne 5-6 : hashtags (#HistoirePourEnfants #ContePourEnfants #HistoireDuSoir #LesHistoiresDeLeone #Maternelle #Parentalité).",
+        "tags": ["histoire du soir pour enfants", "conte pour enfants", "histoire magique", "histoire pour s endormir", "histoires enfants", "maternelle", "4 ans", "5 ans", "6 ans", "7 ans", "8 ans", "les histoires de lia", "conte magique", "histoire courte enfant", "lecture enfant"]
     }},
     "tiktok": {{
-        "title": "titre court et percutant (max 50 caractères)",
-        "description": "caption TikTok engageante avec emojis et hashtags populaires (max 150 caractères). Inclure #LesHistoiresdeLIA"
+        "title": "titre percutant (max 50 caractères), commence par emoji",
+        "description": "caption TikTok (max 150 caractères) : emoji + phrase intrigante sur l'histoire + 5-6 hashtags essentiels : #histoiredusoir #conteenfants #histoirematernelle #storytime #enfants #LesHistoiresDeLeone"
     }},
     "instagram": {{
-        "caption": "caption Instagram complète avec emojis, storytelling, appel à l'action et 20-30 hashtags pertinents. Mentionner @leshistoiresdelia"
+        "caption": "Caption Instagram : 2-3 lignes d'intro engageantes avec emojis sur l'histoire. Puis saut de ligne. Puis 25-30 hashtags mélangés français/anglais : #histoiredusoir #conteenfants #histoirematernelle #histoiremagiqueenfants #storytime #kidsstories #histoirespourenfants #maternelle #parentalite #contedefees #leshistoiresdelia #histoirecourte #bedtimestory #enfants #educationbienveillante #livresenfants #imaginaire #magie #bienveillance #parentalitepositive + hashtags spécifiques au thème de l'histoire"
     }}
 }}"""
 
