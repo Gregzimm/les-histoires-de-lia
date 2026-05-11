@@ -160,91 +160,57 @@ def publish_tiktok(video_path: str, metadata: dict) -> str:
 
 # ========== INSTAGRAM ==========
 
-def _upload_video_for_instagram(video_path: str) -> str:
-    """Upload la vidéo sur un hébergeur temporaire public pour Instagram.
+def _upload_file_for_instagram(file_path: str, mime_type: str = "video/mp4", duration: str = "72h") -> str:
+    """Upload un fichier (vidéo ou image) sur un hébergeur public pour Instagram."""
+    if file_path.startswith("http"):
+        return file_path
 
-    Instagram exige une URL publique accessible depuis ses serveurs.
-    Essaie plusieurs hébergeurs en cascade.
-    """
-    if video_path.startswith("http"):
-        return video_path  # Déjà une URL publique
+    filename = Path(file_path).name
+    ext = Path(file_path).suffix.lower()
+    if not mime_type:
+        mime_type = "image/png" if ext == ".png" else "image/jpeg" if ext in (".jpg", ".jpeg") else "video/mp4"
 
-    print("  Upload de la vidéo pour Instagram...")
-    filename = Path(video_path).name
-
-    # 1. Litterbox.catbox.moe (72h, fiable depuis GitHub Actions)
+    # Litterbox.catbox.moe (72h)
     try:
-        with open(video_path, "rb") as f:
+        with open(file_path, "rb") as f:
             resp = requests.post(
                 "https://litterbox.catbox.moe/resources/internals/api.php",
-                data={"reqtype": "fileupload", "time": "72h"},
-                files={"fileToUpload": (filename, f, "video/mp4")},
-                timeout=300,
+                data={"reqtype": "fileupload", "time": duration},
+                files={"fileToUpload": (filename, f, mime_type)},
+                timeout=120,
             )
         if resp.status_code == 200 and resp.text.startswith("https://"):
-            url = resp.text.strip()
-            print(f"  Vidéo hébergée (litterbox) : {url}")
-            return url
+            return resp.text.strip()
         print(f"  litterbox échoué ({resp.status_code}): {resp.text[:100]}")
     except Exception as e:
         print(f"  litterbox indisponible : {e}")
 
-    # 2. Catbox.moe (permanent, jusqu'à 200MB)
+    # Catbox.moe (permanent)
     try:
-        with open(video_path, "rb") as f:
+        with open(file_path, "rb") as f:
             resp = requests.post(
                 "https://catbox.moe/user/api.php",
                 data={"reqtype": "fileupload"},
-                files={"fileToUpload": (filename, f, "video/mp4")},
-                timeout=300,
+                files={"fileToUpload": (filename, f, mime_type)},
+                timeout=120,
             )
         if resp.status_code == 200 and resp.text.startswith("https://"):
-            url = resp.text.strip()
-            print(f"  Vidéo hébergée (catbox.moe) : {url}")
-            return url
-        print(f"  catbox.moe échoué ({resp.status_code}): {resp.text[:100]}")
+            return resp.text.strip()
     except Exception as e:
         print(f"  catbox.moe indisponible : {e}")
 
-    # 3. Filebin.net
-    try:
-        import uuid
-        bin_id = str(uuid.uuid4())[:8]
-        with open(video_path, "rb") as f:
-            resp = requests.post(
-                f"https://filebin.net/{bin_id}/{filename}",
-                data=f,
-                headers={"Content-Type": "video/mp4"},
-                timeout=300,
-            )
-        if resp.status_code in (200, 201):
-            url = f"https://filebin.net/{bin_id}/{filename}"
-            print(f"  Vidéo hébergée (filebin.net) : {url}")
-            return url
-        print(f"  filebin.net échoué ({resp.status_code}): {resp.text[:100]}")
-    except Exception as e:
-        print(f"  filebin.net indisponible : {e}")
-
-    # 4. 0x0.st (fallback)
-    try:
-        with open(video_path, "rb") as f:
-            resp = requests.post(
-                "https://0x0.st",
-                files={"file": (filename, f, "video/mp4")},
-                timeout=300,
-            )
-        if resp.status_code == 200:
-            url = resp.text.strip()
-            print(f"  Vidéo hébergée (0x0.st) : {url}")
-            return url
-        print(f"  0x0.st échoué ({resp.status_code}): {resp.text[:100]}")
-    except Exception as e:
-        print(f"  0x0.st indisponible : {e}")
-
-    raise RuntimeError("Impossible d'héberger la vidéo : tous les hébergeurs ont échoué.")
+    raise RuntimeError(f"Impossible d'héberger {filename}.")
 
 
-def publish_instagram(video_path: str, metadata: dict) -> str:
+def _upload_video_for_instagram(video_path: str) -> str:
+    """Upload la vidéo sur un hébergeur temporaire public pour Instagram."""
+    print("  Upload de la vidéo pour Instagram...")
+    url = _upload_file_for_instagram(video_path, mime_type="video/mp4")
+    print(f"  Vidéo hébergée : {url}")
+    return url
+
+
+def publish_instagram(video_path: str, metadata: dict, image_path: str = None) -> str:
     """Publie un Reel Instagram via Meta Graph API."""
     graph_url = "https://graph.facebook.com/v21.0"
 
@@ -259,6 +225,16 @@ def publish_instagram(video_path: str, metadata: dict) -> str:
         "caption": metadata["instagram"]["caption"],
         "access_token": INSTAGRAM_ACCESS_TOKEN,
     }
+
+    # Cover image propre (sans sous-titres)
+    if image_path:
+        try:
+            print("  Upload de la cover Instagram (image propre)...")
+            cover_url = _upload_file_for_instagram(image_path, mime_type="image/png")
+            container_params["cover_url"] = cover_url
+            print(f"  Cover hébergée : {cover_url}")
+        except Exception as e:
+            print(f"  Cover ignorée : {e}")
     container_response = requests.post(container_url, params=container_params, timeout=60)
     data = container_response.json()
     container_id = data.get("id")
@@ -321,7 +297,10 @@ def publish_all(videos: dict, metadata: dict, images: dict = None) -> dict:
 
     # Instagram (version courte 9:16)
     try:
-        results["instagram"] = publish_instagram(videos["court"], metadata)
+        results["instagram"] = publish_instagram(
+            videos["court"], metadata,
+            image_path=images.get("portrait") if images else None,
+        )
         print("Instagram OK")
     except Exception as e:
         print(f"Erreur Instagram : {e}")
