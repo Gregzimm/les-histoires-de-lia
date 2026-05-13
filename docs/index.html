@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Histoires de LIA — Histoires pour enfants générées par IA</title>
+  <meta name="description" content="Les Histoires de LIA publie chaque jour des histoires audio pour enfants générées par intelligence artificielle. Découvrez nos aventures sur TikTok et YouTube.">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f9f5ff;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #6200ea 0%, #aa00ff 100%);
+      color: white;
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .logo {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 24px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 900;
+      color: #6200ea;
+      letter-spacing: -2px;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    header p {
+      font-size: 1.15rem;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #6200ea;
+      margin-bottom: 20px;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .feature-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 16px rgba(98,0,234,0.08);
+    }
+    .feature-card .icon {
+      font-size: 2.2rem;
+      margin-bottom: 14px;
+    }
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      color: #555;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .about {
+      background: white;
+      border-radius: 16px;
+      padding: 36px;
+      box-shadow: 0 2px 16px rgba(98,0,234,0.08);
+      margin-bottom: 48px;
+    }
+    .about p {
+      color: #444;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .about p:last-child { margin-bottom: 0; }
+    .platforms {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .platform-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #6200ea;
+      color: white;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    .platform-btn:hover { background: #4a00b4; }
+    .platform-btn.secondary {
+      background: white;
+      color: #6200ea;
+      border: 2px solid #6200ea;
+    }
+    .platform-btn.secondary:hover { background: #f0e6ff; }
+    .legal-links {
+      border-top: 1px solid #e8dff8;
+      padding-top: 32px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .legal-links a {
+      color: #6200ea;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .legal-links a:hover { text-decoration: underline; }
+    footer {
+      background: #1a1a2e;
+      color: #aaa;
+      text-align: center;
+      padding: 24px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">LIA</div>
+  <h1>Les Histoires de LIA</h1>
+  <p>Des histoires audio pour enfants, générées chaque jour par intelligence artificielle et publiées automatiquement.</p>
+</header>
+
+<main>
+
+  <h2 class="section-title">Notre service</h2>
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">🤖</div>
+      <h3>Généré par IA</h3>
+      <p>Chaque histoire est créée automatiquement par l'intelligence artificielle — texte, voix narrative et illustrations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📅</div>
+      <h3>Publication quotidienne</h3>
+      <p>Une nouvelle histoire est publiée chaque jour à 20h, directement sur vos plateformes préférées.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">👧</div>
+      <h3>Pour les enfants</h3>
+      <p>Des contenus adaptés aux enfants : aventures, fables, contes de fées, avec des valeurs positives.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🎙️</div>
+      <h3>Voix narrative</h3>
+      <p>Une voix synthétique douce et expressive donne vie à chaque histoire pour une expérience immersive.</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">À propos</h2>
+  <div class="about">
+    <p>
+      <strong>Les Histoires de LIA</strong> est un service de contenu automatisé qui utilise l'intelligence artificielle pour créer et publier des histoires audio destinées aux enfants. Notre pipeline génère quotidiennement un épisode complet : narration, illustrations et sous-titres.
+    </p>
+    <p>
+      Le contenu est publié via l'API TikTok Content Posting directement sur notre compte <strong>@histoires_de_lia</strong>. Toutes les histoires sont vérifiées pour s'assurer qu'elles respectent les standards de sécurité pour les jeunes publics.
+    </p>
+    <p>
+      Ce service utilise l'API TikTok pour la publication automatisée de contenus vidéo sur la plateforme TikTok, conformément aux Conditions d'utilisation pour les développeurs de TikTok.
+    </p>
+  </div>
+
+  <h2 class="section-title">Retrouvez-nous</h2>
+  <div class="platforms">
+    <a href="https://www.tiktok.com/@histoires_de_lia" class="platform-btn" target="_blank" rel="noopener">
+      📱 TikTok — @histoires_de_lia
+    </a>
+    <a href="https://www.youtube.com/@histoires_de_lia" class="platform-btn secondary" target="_blank" rel="noopener">
+      ▶️ YouTube — @histoires_de_lia
+    </a>
+  </div>
+
+  <div class="legal-links">
+    <a href="/les-histoires-de-lia/terms.html">Conditions d'utilisation</a>
+    <a href="/les-histoires-de-lia/privacy.html">Politique de confidentialité</a>
+    <span style="color:#aaa;">© 2025 Les Histoires de LIA</span>
+  </div>
+
+</main>
+
+<footer>
+  Les Histoires de LIA — Service automatisé de contenu pour enfants propulsé par IA
+</footer>
+
+</body>
+</html>
