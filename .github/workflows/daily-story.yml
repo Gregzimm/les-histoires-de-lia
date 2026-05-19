@@ -2,9 +2,9 @@ name: Les Histoires de LIA - Publication quotidienne
 
 on:
   schedule:
-    # 20h heure de Paris (18h UTC en été, 19h UTC en hiver)
-    # On utilise 18h UTC pour couvrir l'heure d'été
-    - cron: '0 18 * * *'
+    # 18h heure de Paris (16h UTC en été, 17h UTC en hiver)
+    # On utilise 16h UTC pour couvrir l'heure d'été
+    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
       theme:
