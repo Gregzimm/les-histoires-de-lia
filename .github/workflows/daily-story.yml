@@ -2,9 +2,9 @@ name: Les Histoires de LIA - Publication quotidienne
 
 on:
   schedule:
-    # 18h heure de Paris (16h UTC en été, 17h UTC en hiver)
-    # On utilise 16h UTC pour couvrir l'heure d'été
-    - cron: '0 16 * * *'
+    # Démarre à 17h30 Paris (15h30 UTC en été)
+    # Un sleep aléatoire de 0-60 min dans le pipeline donne une publi entre 17h30 et 18h30
+    - cron: '30 15 * * *'
   workflow_dispatch:
     inputs:
       theme:
@@ -43,6 +43,12 @@ jobs:
         run: |
           sudo apt-get install -y fonts-montserrat
           fc-cache -fv
+
+      - name: Random delay (17h30 to 18h30 Paris)
+        run: |
+          DELAY=$((RANDOM % 3601))
+          echo "Délai aléatoire : ${DELAY}s (publi entre 17h30 et 18h30)"
+          sleep $DELAY
 
       - name: Run pipeline
         env:

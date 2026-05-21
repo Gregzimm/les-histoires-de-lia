@@ -26,20 +26,32 @@ CONTEXTE PLATEFORME :
 - La vidéo longue (YouTube) dure ~5 minutes
 - Public : parents qui cherchent des histoires du soir, enfants 4-8 ans
 
+RÈGLE ABSOLUE SUR LES TITRES :
+Les titres doivent sonner naturels et humains — jamais formulaïques ni répétitifs.
+INTERDIT : toujours finir par "| Histoire pour Enfants", "| Conte Magique", "#Shorts" dans le titre, ou répéter le même schéma.
+AUTORISÉ : varier librement le format. Choisir parmi ces styles selon ce qui colle le mieux à l'histoire :
+  Style A — Narratif : "[personnage] [verbe d'action] [quelque chose d'insolite]" ex: "Léonie retrouve son courage cette nuit-là 🌙"
+  Style B — Question : "Et si [situation magique inattendue] ?" ex: "Et si les fleurs pouvaient te parler ? 🌸"
+  Style C — Accroche émotionnelle : "[personnage] avait peur de [X]... jusqu'au jour où" ex: "Il avait peur du noir. Jusqu'à cette nuit-là. 🌑"
+  Style D — Mystère : "[phrase courte mystérieuse sur l'histoire]" ex: "Le carnet de Papi cachait un secret 📘"
+  Style E — Interpellation parent : "[question ou suggestion au parent]" ex: "Une histoire pour aider ton enfant à s'endormir 🌙"
+Mélange les styles d'une publication à l'autre. L'emoji peut être au début OU à la fin.
+Intègre naturellement 1-2 mots SEO parmi : histoire du soir, conte, magie, enfants — mais sans les forcer.
+
 Réponds UNIQUEMENT avec un JSON valide (sans bloc de code markdown) :
 
 {{
     "youtube": {{
-        "title": "Titre YouTube optimisé SEO (max 70 caractères). Format : [emoji] [Titre histoire] | Histoire du soir pour enfants. Doit contenir des mots que les parents cherchent : 'histoire du soir', 'conte', 'histoire magique', 'enfants'. Commence par un emoji pertinent.",
-        "description": "Description YouTube SEO (5-7 lignes). Ligne 1 : phrase accrocheuse sur l'histoire. Ligne 2-3 : résumé avec mots-clés ('histoire du soir pour enfants', 'conte magique', 'histoire pour s\\'endormir', 'histoires pour enfants 4 ans 5 ans 6 ans'). Ligne 4 : 'Abonne-toi pour une nouvelle histoire chaque jour 🔔'. Ligne 5-6 : hashtags (#HistoirePourEnfants #ContePourEnfants #HistoireDuSoir #LesHistoiresDeLeone #Maternelle #Parentalité).",
+        "title": "Titre YouTube naturel et varié (max 70 caractères). Appliquer la règle ci-dessus.",
+        "description": "Description YouTube (5-7 lignes). Ligne 1 : phrase accrocheuse sur l'histoire, ton chaleureux. Ligne 2-3 : résumé naturel avec mots-clés ('histoire du soir pour enfants', 'conte magique', 'histoire pour s\\'endormir', '4 ans 5 ans 6 ans 7 ans'). Ligne 4 : call-to-action abonnement chaleureux. Ligne 5-6 : 4-5 hashtags max (#HistoireDuSoir #ContePourEnfants #LesHistoiresDeLeone #Maternelle).",
         "tags": ["histoire du soir pour enfants", "conte pour enfants", "histoire magique", "histoire pour s endormir", "histoires enfants", "maternelle", "4 ans", "5 ans", "6 ans", "7 ans", "8 ans", "les histoires de lia", "conte magique", "histoire courte enfant", "lecture enfant"]
     }},
     "tiktok": {{
-        "title": "titre percutant (max 50 caractères), commence par emoji",
-        "description": "caption TikTok (max 150 caractères) : emoji + phrase intrigante sur l'histoire + 5-6 hashtags essentiels : #histoiredusoir #conteenfants #histoirematernelle #storytime #enfants #LesHistoiresDeLeone"
+        "title": "Titre TikTok court et percutant (max 50 caractères). Appliquer la règle ci-dessus. Pas de #Shorts dans le titre.",
+        "description": "Caption TikTok (max 150 caractères) : phrase intrigante sur l'histoire + 4-5 hashtags essentiels seulement. Varier la formulation."
     }},
     "instagram": {{
-        "caption": "Caption Instagram : 2-3 lignes d'intro engageantes avec emojis sur l'histoire. Puis saut de ligne. Puis 25-30 hashtags mélangés français/anglais : #histoiredusoir #conteenfants #histoirematernelle #histoiremagiqueenfants #storytime #kidsstories #histoirespourenfants #maternelle #parentalite #contedefees #leshistoiresdelia #histoirecourte #bedtimestory #enfants #educationbienveillante #livresenfants #imaginaire #magie #bienveillance #parentalitepositive + hashtags spécifiques au thème de l'histoire"
+        "caption": "Caption Instagram : 2-3 lignes d'intro engageantes et chaleureuses avec emojis. Ton humain, comme si un parent parlait à d'autres parents. Puis saut de ligne. Puis 20-25 hashtags mélangés français/anglais pertinents : #histoiredusoir #conteenfants #histoirematernelle #storytime #kidsstories #histoirespourenfants #maternelle #parentalite #contedefees #leshistoiresdelia #bedtimestory #enfants #educationbienveillante #livresenfants #imaginaire #magie #bienveillance #parentalitepositive + 5-6 hashtags spécifiques au thème de l'histoire."
     }}
 }}"""
 
