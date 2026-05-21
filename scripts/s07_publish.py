@@ -104,7 +104,7 @@ def _add_to_playlist(youtube, playlist_id: str, video_id: str) -> None:
         print(f"  Erreur ajout playlist : {e}")
 
 
-def _upload_youtube(youtube, video_path: str, title: str, description: str, tags: list, made_for_kids: bool = True) -> str:
+def _upload_youtube(youtube, video_path: str, title: str, description: str, tags: list, made_for_kids: bool = False) -> str:
     """Upload générique vers YouTube."""
     body = {
         "snippet": {
@@ -139,8 +139,8 @@ def _set_thumbnail(youtube, video_id: str, thumbnail_path: str) -> None:
         print(f"  Miniature ignorée (chaîne non vérifiée ou erreur) : {e}")
 
 
-def publish_youtube(video_path: str, short_path: str, metadata: dict, images: dict = None) -> dict:
-    """Upload la vidéo longue + le Short sur YouTube."""
+def _build_youtube_client():
+    """Construit le client YouTube API authentifié."""
     creds = Credentials(
         token=None,
         refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -148,24 +148,17 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict, images: di
         client_id=YOUTUBE_CLIENT_ID,
         client_secret=YOUTUBE_CLIENT_SECRET,
     )
-    youtube = build("youtube", "v3", credentials=creds)
+    return build("youtube", "v3", credentials=creds)
 
-    # Vidéo longue 16:9
-    long_id = _upload_youtube(
-        youtube,
-        video_path,
-        title=metadata["youtube"]["title"],
-        description=metadata["youtube"]["description"],
-        tags=metadata["youtube"]["tags"],
-    )
-    print(f"YouTube (long) publié : https://youtube.com/watch?v={long_id}")
-    if images and images.get("landscape"):
-        _set_thumbnail(youtube, long_id, images["landscape"])
 
-    # Short 9:16 — titre et description dédiés (pas de #Shorts dans le titre)
+def publish_youtube_short(short_path: str, metadata: dict, thumbnails: dict = None) -> str:
+    """Upload uniquement le Short YouTube (phase 1 — publie en premier)."""
+    youtube = _build_youtube_client()
+
     yt_short = metadata.get("youtube_short", {})
     short_title = yt_short.get("title") or metadata["youtube"]["title"]
     short_description = yt_short.get("description") or metadata["youtube"]["description"]
+
     short_id = _upload_youtube(
         youtube,
         short_path,
@@ -174,17 +167,39 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict, images: di
         tags=metadata["youtube"]["tags"] + ["Shorts", "YouTubeShorts"],
     )
     print(f"YouTube Short publié : https://youtube.com/watch?v={short_id}")
-    if images and images.get("portrait"):
-        _set_thumbnail(youtube, short_id, images["portrait"])
 
-    # Playlists — vidéo longue dans la catégorie thématique + "Toutes les histoires"
+    thumb = (thumbnails or {}).get("portrait")
+    if thumb:
+        _set_thumbnail(youtube, short_id, thumb)
+
+    return short_id
+
+
+def publish_youtube_long(video_path: str, metadata: dict, thumbnails: dict = None) -> str:
+    """Upload la vidéo longue YouTube + playlists (phase 2 — publie après le Short)."""
+    youtube = _build_youtube_client()
+
+    long_id = _upload_youtube(
+        youtube,
+        video_path,
+        title=metadata["youtube"]["title"],
+        description=metadata["youtube"]["description"],
+        tags=metadata["youtube"]["tags"],
+    )
+    print(f"YouTube (long) publié : https://youtube.com/watch?v={long_id}")
+
+    thumb = (thumbnails or {}).get("landscape")
+    if thumb:
+        _set_thumbnail(youtube, long_id, thumb)
+
+    # Playlists — catégorie thématique + "Toutes les histoires"
     category = metadata.get("playlist_category", "Magie & Aventure")
     for cat in [category, "Toutes les histoires"]:
         playlist_id = _get_or_create_playlist(youtube, cat)
         if playlist_id:
             _add_to_playlist(youtube, playlist_id, long_id)
 
-    return {"long": long_id, "short": short_id}
+    return long_id
 
 
 # ========== TIKTOK ==========
@@ -356,19 +371,21 @@ def publish_instagram(video_path: str, metadata: dict, image_path: str = None) -
 
 # ========== PUBLICATION GLOBALE ==========
 
-def publish_all(videos: dict, metadata: dict, images: dict = None) -> dict:
-    """Publie sur toutes les plateformes."""
+def publish_short_platforms(videos: dict, metadata: dict, thumbnails: dict = None) -> dict:
+    """Phase 1 : publie le Short sur YouTube + TikTok + Instagram."""
     results = {}
 
-    # YouTube (version longue 16:9 + Short 9:16)
+    # YouTube Short
     try:
-        results["youtube"] = publish_youtube(videos["long"], videos["court"], metadata, images=images)
-        print("YouTube OK")
+        results["youtube_short"] = publish_youtube_short(
+            videos["court"], metadata, thumbnails=thumbnails
+        )
+        print("YouTube Short OK")
     except Exception as e:
-        print(f"Erreur YouTube : {e}")
-        results["youtube"] = None
+        print(f"Erreur YouTube Short : {e}")
+        results["youtube_short"] = None
 
-    # TikTok (version courte 9:16)
+    # TikTok
     try:
         results["tiktok"] = publish_tiktok(videos["court"], metadata)
         print("TikTok OK")
@@ -376,17 +393,31 @@ def publish_all(videos: dict, metadata: dict, images: dict = None) -> dict:
         print(f"Erreur TikTok : {e}")
         results["tiktok"] = None
 
-    # Instagram (version courte 9:16)
+    # Instagram
     try:
         results["instagram"] = publish_instagram(
             videos["court"], metadata,
-            image_path=images.get("portrait") if images else None,
+            image_path=(thumbnails or {}).get("portrait"),
         )
         print("Instagram OK")
     except Exception as e:
         print(f"Erreur Instagram : {e}")
         results["instagram"] = None
 
+    return results
+
+
+def publish_long_platform(videos: dict, metadata: dict, thumbnails: dict = None) -> dict:
+    """Phase 2 : publie la vidéo longue sur YouTube (après délai)."""
+    results = {}
+    try:
+        results["youtube_long"] = publish_youtube_long(
+            videos["long"], metadata, thumbnails=thumbnails
+        )
+        print("YouTube Long OK")
+    except Exception as e:
+        print(f"Erreur YouTube Long : {e}")
+        results["youtube_long"] = None
     return results
 
 

@@ -12,6 +12,8 @@ Orchestre la génération quotidienne d'une histoire pour enfants :
 """
 
 import json
+import random
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -20,9 +22,9 @@ from scripts.s01_generate_story import generate_story, save_story
 from scripts.s02_generate_image import generate_both_formats
 from scripts.s03_generate_audio import generate_both_versions
 from scripts.s04_generate_subtitles import generate_both_subtitles
-from scripts.s05_assemble_video import assemble_both_versions
+from scripts.s05_assemble_video import assemble_both_versions, generate_thumbnails
 from scripts.s06_generate_metadata import generate_metadata, save_metadata
-from scripts.s07_publish import publish_all
+from scripts.s07_publish import publish_short_platforms, publish_long_platform
 
 
 def run_pipeline(theme_hint: str | None = None, skip_publish: bool = False):
@@ -77,13 +79,30 @@ def run_pipeline(theme_hint: str | None = None, skip_publish: bool = False):
     print(f"  → YouTube : {metadata['youtube']['title']}")
     print(f"  → TikTok  : {metadata['tiktok']['title']}\n")
 
-    # --- ÉTAPE 7 : Publication ---
+    # --- ÉTAPE 6.5 : Miniatures avec titre ---
+    print("[6.5/7] Génération des miniatures...")
+    thumbnails = generate_thumbnails(images, metadata["youtube"]["title"], str(day_dir))
+    print(f"  → Portrait  : {thumbnails['portrait']}")
+    print(f"  → Paysage   : {thumbnails['landscape']}\n")
+
+    # --- ÉTAPE 7 : Publication en deux phases ---
     if skip_publish:
         print("[7/7] Publication IGNORÉE (mode test)\n")
-        results = {"youtube": None, "tiktok": None, "instagram": None}
+        results = {"youtube_short": None, "youtube_long": None, "tiktok": None, "instagram": None}
     else:
-        print("[7/7] Publication sur les réseaux...")
-        results = publish_all(videos, metadata, images=images)
+        # Phase 1 : Short (YouTube Short + TikTok + Instagram)
+        print("[7/7] Phase 1 — Publication Short (YouTube Short, TikTok, Instagram)...")
+        results = publish_short_platforms(videos, metadata, thumbnails=thumbnails)
+        print()
+
+        # Délai entre Short et Long : 15 à 25 minutes
+        delay_min = random.randint(15, 25)
+        print(f"  ⏱  Attente {delay_min} min avant la vidéo longue YouTube...")
+        time.sleep(delay_min * 60)
+
+        # Phase 2 : Long (YouTube Long uniquement)
+        print("[7/7] Phase 2 — Publication Long (YouTube)...")
+        results.update(publish_long_platform(videos, metadata, thumbnails=thumbnails))
         print()
 
     # --- Résumé ---
@@ -94,6 +113,7 @@ def run_pipeline(theme_hint: str | None = None, skip_publish: bool = False):
         "fichiers": {
             "story": story_path,
             "images": images,
+            "thumbnails": thumbnails,
             "audio": audio_paths,
             "subtitles": subtitle_paths,
             "videos": videos,

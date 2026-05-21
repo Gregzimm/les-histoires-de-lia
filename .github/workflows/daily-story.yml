@@ -20,7 +20,7 @@ on:
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 70
 
     steps:
       - name: Checkout
@@ -44,10 +44,11 @@ jobs:
           sudo apt-get install -y fonts-montserrat
           fc-cache -fv
 
-      - name: Random delay (17h30 to 18h30 Paris)
+      - name: Random delay initial (17h30 to 18h00 Paris)
         run: |
-          DELAY=$((RANDOM % 3601))
-          echo "Délai aléatoire : ${DELAY}s (publi entre 17h30 et 18h30)"
+          DELAY=$((RANDOM % 1801))
+          echo "Délai initial aléatoire : ${DELAY}s"
+          echo "Short publiera entre 17h30 et 18h00, Long entre 17h45 et 18h25"
           sleep $DELAY
 
       - name: Run pipeline
