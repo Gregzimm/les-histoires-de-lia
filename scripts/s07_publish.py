@@ -31,6 +31,79 @@ except ModuleNotFoundError:
 
 # ========== YOUTUBE ==========
 
+# Catégories de playlists — créées automatiquement si elles n'existent pas
+PLAYLIST_DEFINITIONS = {
+    "Émotions & Sentiments":  "Histoires sur la peur, la jalousie, la tristesse et les émotions des enfants ✨",
+    "Amitié & Famille":       "Histoires sur l'amitié, la famille et les liens qui comptent 💛",
+    "Courage & Dépassement":  "Histoires sur le courage, la persévérance et le dépassement de soi 🌟",
+    "Magie & Aventure":       "Histoires magiques et aventures extraordinaires pour les enfants 🪄",
+    "Grandir & Apprendre":    "Histoires sur le partage, le pardon, la vérité et grandir ensemble 🌱",
+    "Toutes les histoires":   "Toutes les histoires du soir des Histoires de LIA 🌙",
+}
+
+_playlist_id_cache: dict = {}
+
+
+def _get_or_create_playlist(youtube, category: str) -> str | None:
+    """Retourne l'ID d'une playlist existante ou la crée si elle n'existe pas."""
+    if category in _playlist_id_cache:
+        return _playlist_id_cache[category]
+
+    title = f"{category} | Les Histoires de LIA"
+    description = PLAYLIST_DEFINITIONS.get(category, "")
+
+    # Chercher parmi les playlists existantes de la chaîne
+    try:
+        response = youtube.playlists().list(part="id,snippet", mine=True, maxResults=50).execute()
+        for item in response.get("items", []):
+            if item["snippet"]["title"] == title:
+                playlist_id = item["id"]
+                _playlist_id_cache[category] = playlist_id
+                print(f"  Playlist trouvée : {title} ({playlist_id})")
+                return playlist_id
+    except Exception as e:
+        print(f"  Erreur recherche playlist : {e}")
+        return None
+
+    # Créer la playlist
+    try:
+        playlist = youtube.playlists().insert(
+            part="snippet,status",
+            body={
+                "snippet": {
+                    "title": title,
+                    "description": description,
+                    "defaultLanguage": "fr",
+                },
+                "status": {"privacyStatus": "public"},
+            },
+        ).execute()
+        playlist_id = playlist["id"]
+        _playlist_id_cache[category] = playlist_id
+        print(f"  Playlist créée : {title} ({playlist_id})")
+        return playlist_id
+    except Exception as e:
+        print(f"  Erreur création playlist : {e}")
+        return None
+
+
+def _add_to_playlist(youtube, playlist_id: str, video_id: str) -> None:
+    """Ajoute une vidéo à une playlist."""
+    try:
+        youtube.playlistItems().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "playlistId": playlist_id,
+                    "resourceId": {"kind": "youtube#video", "videoId": video_id},
+                }
+            },
+        ).execute()
+        print(f"  Vidéo {video_id} ajoutée à la playlist {playlist_id}")
+    except Exception as e:
+        print(f"  Erreur ajout playlist : {e}")
+
+
 def _upload_youtube(youtube, video_path: str, title: str, description: str, tags: list, made_for_kids: bool = True) -> str:
     """Upload générique vers YouTube."""
     body = {
@@ -89,9 +162,10 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict, images: di
     if images and images.get("landscape"):
         _set_thumbnail(youtube, long_id, images["landscape"])
 
-    # Short 9:16
-    short_title = metadata["youtube"]["title"].replace(" | Histoire pour Enfants", "") + " #Shorts"
-    short_description = f"#Shorts #HistoiresPourEnfants #LIA\n\n{metadata['youtube']['description']}"
+    # Short 9:16 — titre et description dédiés (pas de #Shorts dans le titre)
+    yt_short = metadata.get("youtube_short", {})
+    short_title = yt_short.get("title") or metadata["youtube"]["title"]
+    short_description = yt_short.get("description") or metadata["youtube"]["description"]
     short_id = _upload_youtube(
         youtube,
         short_path,
@@ -102,6 +176,13 @@ def publish_youtube(video_path: str, short_path: str, metadata: dict, images: di
     print(f"YouTube Short publié : https://youtube.com/watch?v={short_id}")
     if images and images.get("portrait"):
         _set_thumbnail(youtube, short_id, images["portrait"])
+
+    # Playlists — vidéo longue dans la catégorie thématique + "Toutes les histoires"
+    category = metadata.get("playlist_category", "Magie & Aventure")
+    for cat in [category, "Toutes les histoires"]:
+        playlist_id = _get_or_create_playlist(youtube, cat)
+        if playlist_id:
+            _add_to_playlist(youtube, playlist_id, long_id)
 
     return {"long": long_id, "short": short_id}
 
