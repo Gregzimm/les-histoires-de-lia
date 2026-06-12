@@ -37,7 +37,16 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install FFmpeg
+        id: ffmpeg
         uses: AnimMouse/setup-ffmpeg@v1
+        continue-on-error: true
+
+      - name: Install FFmpeg (fallback apt)
+        if: steps.ffmpeg.outcome == 'failure'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -1
 
       - name: Install Montserrat font
         run: |
